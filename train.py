@@ -7,7 +7,7 @@ batch_size = 16
 batch_multiplier = 6
 reg_coef = 1.0
 
-resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='grpc://tpu-lightning')
+resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='tpu-lightning')
 tf.config.experimental_connect_to_cluster(resolver)
 # This is the TPU initialization code that has to be at the beginning.
 tf.tpu.experimental.initialize_tpu_system(resolver)
