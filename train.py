@@ -7,6 +7,14 @@ batch_size = 16
 batch_multiplier = 6
 reg_coef = 1.0
 
+resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='grpc://tpu-lightning')
+tf.config.experimental_connect_to_cluster(resolver)
+# This is the TPU initialization code that has to be at the beginning.
+tf.tpu.experimental.initialize_tpu_system(resolver)
+print("All devices: ", tf.config.list_logical_devices('TPU'))
+
+strategy = tf.distribute.experimental.TPUStrategy(resolver)
+
 
 def parse_function(example_proto):
     features = {'image_raw': tf.io.FixedLenFeature([], tf.string),
@@ -24,21 +32,27 @@ def parse_function(example_proto):
     return img, label
 
 
+#dataset = tf.data.TFRecordDataset(
+#    'dataset/converted_dataset/ms1m_train.tfrecord')
+
 dataset = tf.data.TFRecordDataset(
-    'dataset/converted_dataset/ms1m_train.tfrecord')
+    'gs://enb0/ms1m_train.tfrecord')
+
 dataset = dataset.map(parse_function)
 dataset = dataset.shuffle(buffer_size=20000)
 dataset = dataset.batch(batch_size * batch_multiplier)
 
 print("Preparing model...")
 
-model = train_model()
 
-learning_rate = 0.0005
-optimizer = tf.keras.optimizers.SGD(
-    lr=learning_rate, momentum=0.9, nesterov=False)
-# optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
-# optimizer = tf.keras.optimizers.Adagrad(lr=learning_rate, decay=0.0)
+with strategy.scope():
+    model = train_model()
+
+    learning_rate = 0.0005
+    optimizer = tf.keras.optimizers.SGD(
+        lr=learning_rate, momentum=0.9, nesterov=False)
+    # optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
+    # optimizer = tf.keras.optimizers.Adagrad(lr=learning_rate, decay=0.0)
 
 
 @tf.function
