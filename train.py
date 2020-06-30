@@ -41,6 +41,7 @@ dataset = tf.data.TFRecordDataset(
 dataset = dataset.map(parse_function)
 dataset = dataset.shuffle(buffer_size=20000)
 dataset = dataset.batch(batch_size * batch_multiplier)
+dataset = dataset.prefetch(1)
 
 print("Preparing model...")
 
